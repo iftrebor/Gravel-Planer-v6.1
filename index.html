@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Gravel‑Tour – Ernährungs‑ & Trinkplan v6.1</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0b0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gravel Plan">
+<style>
+:root{
+  --bg:#0b0f14; --panel:#121821; --card:#0f141c; --border:#213043;
+  --ink:#e6eef9; --muted:#8796ad; --accent:#2cc56f; --shadow:0 10px 30px rgba(0,0,0,.26);
+  --radius:18px; --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
+  --text-sm:12px; --text-md:15px; --text-input:16px; --text-lg:22px; --text-kpi:22px;
+  --space-1:8px; --space-2:10px; --space-3:12px; --space-4:14px;
+}
+:root.light{
+  --bg:#f5f7fb; --panel:#ffffff; --card:#f9fbff; --border:#d8e1ef;
+  --ink:#112132; --muted:#5f7086; --accent:#22a558; --shadow:0 10px 24px rgba(17,33,50,.08);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.35;
+  padding:calc(var(--space-3) + var(--safe-top)) var(--space-3) calc(88px + var(--safe-bottom));
+  max-width:980px;margin-inline:auto
+}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(11,15,20,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding-bottom:var(--space-2);margin-bottom:var(--space-3)}
+:root.light .topbar{background:rgba(245,247,251,.92)}
+.header{display:flex;gap:var(--space-3);align-items:center;padding-top:2px}
+.appicon{width:52px;height:52px;border-radius:14px;box-shadow:var(--shadow)}
+.title h1{margin:0;font-size:var(--text-lg)}
+.subtitle,.help,.btn-help,.kpi .s,.kpi .k,.footer,.tabbtn,.badge{font-size:var(--text-sm)}
+.subtitle,.help,.btn-help,.kpi .s,.kpi .k,.footer,.tabbtn,.badge,.muted{color:var(--muted)}
+.subtitle{margin-top:3px}
+.toolbar{display:flex;gap:var(--space-1);flex-wrap:wrap;margin-top:var(--space-2)}
+.btn{
+  appearance:none;border:1px solid var(--border);background:var(--panel);color:var(--ink);padding:12px 14px;border-radius:14px;cursor:pointer;
+  min-height:46px;font-size:var(--text-md);font-weight:650;box-shadow:var(--shadow)
+}
+.btn.primary{background:linear-gradient(180deg,var(--accent),#1b944f);color:#08210f;border-color:#177d43}
+.btn.ghost{background:transparent;box-shadow:none}
+.btn.small{padding:10px 12px;min-height:42px;font-size:14px}
+.btn-help{display:block;font-weight:500;margin-top:4px;line-height:1.25}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(11,15,20,.95);backdrop-filter:blur(12px);border-top:1px solid var(--border);padding-bottom:var(--safe-bottom)}
+:root.light .tabs{background:rgba(245,247,251,.96)}
+.tabbtn{border:none;border-right:1px solid var(--border);background:transparent;padding:12px 6px 14px;font-weight:700;min-height:62px}
+.tabbtn:last-child{border-right:none}
+.tabbtn.active{color:var(--ink);background:rgba(255,255,255,.03)}
+main{display:grid;gap:var(--space-4)}
+section.panel{display:none;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-4);box-shadow:var(--shadow)}
+section.panel.active{display:block}
+section h2{margin:0 0 var(--space-3);font-size:19px}
+.card,.kpi{background:var(--card);border:1px solid var(--border);border-radius:16px}
+.card{padding:var(--space-3)}
+.card h3{margin:0 0 var(--space-1);font-size:15px}
+.row{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--space-2);align-items:start}
+.field{grid-column:span 6;background:rgba(0,0,0,.04);border:1px solid var(--border);padding:var(--space-2);border-radius:14px;min-width:0}
+.field.full{grid-column:span 12}
+.field label{display:block;color:var(--muted);font-size:var(--text-sm);margin-bottom:6px}
+.field input,.field select{width:100%;padding:13px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--ink);font-size:var(--text-input);min-height:48px}
+.help{margin-top:5px}
+.pill{display:inline-flex;gap:var(--space-1);background:var(--card);border:1px solid var(--border);padding:8px 10px;border-radius:999px;align-items:center}
+.pill input{margin:0;width:18px;height:18px;min-height:auto}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:var(--space-2)}
+@media(max-width:740px){.cards{grid-template-columns:1fr}}
+ul{margin:0;padding-left:18px}
+table{width:100%;border-collapse:collapse;overflow:hidden;border-radius:14px}
+th,td{border-bottom:1px solid var(--border);padding:8px;vertical-align:top}
+th{color:var(--muted);text-align:left;background:var(--card);position:sticky;top:0}
+details{border:1px dashed var(--border);border-radius:14px;padding:var(--space-2);margin-top:var(--space-2);background:rgba(0,0,0,.03)}
+details>summary{cursor:pointer;font-weight:700}
+.checkgrid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:var(--space-1)}
+@media(max-width:780px){.checkgrid{grid-template-columns:1fr}}
+.checkitem{display:flex;gap:var(--space-2);align-items:flex-start;background:var(--card);border:1px solid var(--border);padding:var(--space-2);border-radius:12px}
+.checkitem input{margin-top:2px;width:20px;height:20px}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:var(--space-2)}
+@media(max-width:620px){.kpis{grid-template-columns:1fr 1fr}}
+.kpi{padding:var(--space-3)}
+.kpi .v{font-size:var(--text-kpi);font-weight:800}
+.badges{display:flex;gap:var(--space-1);flex-wrap:wrap;margin-top:var(--space-2)}
+.badge{display:inline-block;padding:7px 10px;border-radius:999px;border:1px solid var(--border);background:var(--card)}
+.footer{text-align:center;padding-bottom:8px}
+.plan-desktop{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-4);align-items:start}
+.plan-desktop .left,.plan-desktop .right{display:grid;gap:var(--space-2);min-width:0}
+.plan-mobile{display:none}
+@media(max-width:640px){
+  .plan-desktop{display:none}
+  .plan-mobile{display:grid;gap:var(--space-2)}
+  .plan-mobile-top{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);align-items:start}
+  .field{grid-column:span 12}
+  .card,.kpi{padding:var(--space-2)}
+  .kpi .v{font-size:20px}
+  .toolbar{margin-top:var(--space-2)}
+}
+#printHeader{display:none}
+@media print{
+  .topbar,.tabs,.field .help,details,.pill,.theme-controls,.plan-mobile{display:none!important}
+  body{background:#fff;color:#000;padding:0}
+  section.panel{display:block!important;background:#fff;border:1px solid #ccc;box-shadow:none}
+  .card,.field,.kpi{background:#fff;border:1px solid #ccc;box-shadow:none}
+  th{background:#eee;color:#000}
+  #printHeader{display:block;margin-bottom:10px}
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="header">
+    <img class="appicon" src="icon-192.png" alt="Gravel Icon">
+    <div class="title">
+      <h1>Gravel‑Tour – Ernährungs‑ & Trinkplan</h1>
+      <div class="subtitle">Version 6.1 · Cleanup ohne Inhaltsänderung</div>
+    </div>
+  </div>
+  <div class="toolbar">
+    <button class="btn small" id="preset100">100 km</button>
+    <button class="btn small" id="preset130">130 km</button>
+    <button class="btn small" id="preset170">170 km</button>
+    <button class="btn small" id="preset200">200 km</button>
+    <button class="btn small" id="printBtn">🖨️ Drucken</button>
+    <button class="btn primary small" id="exportPdf">📄 PDF</button>
+    <button class="btn small theme-controls" id="themeToggle">🌗 Hell/Dunkel</button>
+  </div>
+</div>
+
+<main id="exportArea">
+  <div id="printHeader"></div>
+
+  <section class="panel active" id="tab-plan">
+    <h2>Plan</h2>
+
+    <div class="plan-desktop">
+      <div class="left">
+        <div class="card">
+          <h3>Tourdaten</h3>
+          <div class="row">
+            <div class="field">
+              <label>Distanz (km) 🚴</label>
+              <input type="number" id="distance" value="130" min="10" step="5">
+              <div class="help">Typisch: 80–200 km</div>
+            </div>
+            <div class="field">
+              <label>Ø‑Geschwindigkeit (km/h) ⏱️</label>
+              <input type="number" id="speed" value="20" min="10" max="40" step="0.5">
+              <div class="help">Typisch: 16–24 km/h</div>
+            </div>
+            <div class="field full">
+              <label class="pill"><input type="checkbox" id="hotMode"> <span>Hitze‑Modus ☀️</span></label>
+              <div class="help">Bei 25–30 °C oder starker Sonneneinstrahlung aktivieren.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Hydration & Fueling</h3>
+          <div class="row">
+            <div class="field">
+              <label>Trinkmenge (ml/h) 💧</label>
+              <input type="number" id="mlPerHour" value="650" min="300" max="1200" step="10">
+              <div class="help">Typisch: 600–800 ml/h</div>
+            </div>
+            <div class="field">
+              <label>Kohlenhydrate (g/h) 🍫</label>
+              <input type="number" id="carbPerHour" value="60" min="40" max="110" step="1">
+              <div class="help">Typisch: 50–80 g/h</div>
+            </div>
+            <div class="field">
+              <label>Natrium‑Ziel (mg/h) 🧂</label>
+              <input type="number" id="naPerHour" value="500" min="200" max="1500" step="25">
+              <div class="help">Typisch: 400–800 mg/h</div>
+            </div>
+            <div class="field">
+              <label>Flaschengröße (ml) 🍼</label>
+              <input type="number" id="bottleMl" value="800" min="500" max="1000" step="50">
+              <div class="help">Typisch: 750–850 ml</div>
+            </div>
+            <div class="field">
+              <label>Fruktose : Maltodextrin ⚗️</label>
+              <select id="ratio">
+                <option value="1:1">1:1</option>
+                <option value="1:2" selected>1:2</option>
+                <option value="1:3">1:3</option>
+              </select>
+              <div class="help">Standard: 1:2</div>
+            </div>
+            <div class="field">
+              <label class="pill"><input type="checkbox" id="waterSecond"> <span>2. Flasche = Wasser 🚰</span></label>
+              <div class="help">Standard: beide Flaschen mit gemischtem Drink.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button class="btn" id="suggestBtn">✨ Empfehlungen übernehmen<span class="btn-help">normal: 650 ml/h · 60 g/h · 500 mg/h · Flasche 800 ml · Verhältnis 1:2<br>Hitze: 800 ml/h · 75 g/h · 850 mg/h</span></button>
+          <button class="btn ghost" id="resetBtn">↺ Zurücksetzen</button>
+          <button class="btn primary" id="calcBtn">🧮 Plan berechnen</button>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="kpis">
+          <div class="kpi"><div class="k">Dauer</div><div class="v" id="kpiDuration">–</div><div class="s">Distanz ÷ Tempo</div></div>
+          <div class="kpi"><div class="k">Gesamt trinken</div><div class="v" id="kpiDrink">–</div><div class="s">über die ganze Tour</div></div>
+          <div class="kpi"><div class="k">Gesamt KH</div><div class="v" id="kpiCarbs">–</div><div class="s">Zielwert</div></div>
+          <div class="kpi"><div class="k">Gesamt Natrium</div><div class="v" id="kpiSodium">–</div><div class="s">Zielwert</div></div>
+          <div class="kpi"><div class="k">KH je Flasche</div><div class="v" id="kpiCarbBottle">–</div><div class="s" id="kpiCarbBottleSub">–</div></div>
+          <div class="kpi"><div class="k">Salz je Flasche</div><div class="v" id="kpiSaltBottle">–</div><div class="s" id="kpiSaltBottleSub">–</div></div>
+        </div>
+
+        <div class="card">
+          <h3>Sofortüberblick</h3>
+          <div class="badges">
+            <span class="badge" id="badgeSplit">–</span>
+            <span class="badge" id="badgeBottles">–</span>
+            <span class="badge" id="badgeRefill">–</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Kurze Zusammenfassung</h3>
+          <ul id="planSummaryList" class="small"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="plan-mobile">
+      <div class="toolbar">
+        <button class="btn" id="suggestBtn_m">✨ Empfehlungen übernehmen<span class="btn-help">normal: 650 ml/h · 60 g/h · 500 mg/h · Flasche 800 ml · Verhältnis 1:2<br>Hitze: 800 ml/h · 75 g/h · 850 mg/h</span></button>
+        <button class="btn ghost" id="resetBtn_m">↺ Zurücksetzen</button>
+        <button class="btn primary" id="calcBtn_m">🧮 Plan berechnen</button>
+      </div>
+
+      <div class="plan-mobile-top">
+        <div class="card">
+          <h3>Tourdaten</h3>
+          <div class="row">
+            <div class="field">
+              <label>Distanz (km) 🚴</label>
+              <input type="number" id="distance_m" value="130" min="10" step="5">
+              <div class="help">Typisch: 80–200 km</div>
+            </div>
+            <div class="field">
+              <label>Ø‑Geschwindigkeit (km/h) ⏱️</label>
+              <input type="number" id="speed_m" value="20" min="10" max="40" step="0.5">
+              <div class="help">Typisch: 16–24 km/h</div>
+            </div>
+            <div class="field full">
+              <label class="pill"><input type="checkbox" id="hotMode_m"> <span>Hitze‑Modus ☀️</span></label>
+              <div class="help">Bei 25–30 °C oder starker Sonneneinstrahlung aktivieren.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Hydration & Fueling</h3>
+          <div class="row">
+            <div class="field">
+              <label>Trinkmenge (ml/h) 💧</label>
+              <input type="number" id="mlPerHour_m" value="650" min="300" max="1200" step="10">
+              <div class="help">Typisch: 600–800 ml/h</div>
+            </div>
+            <div class="field">
+              <label>Kohlenhydrate (g/h) 🍫</label>
+              <input type="number" id="carbPerHour_m" value="60" min="40" max="110" step="1">
+              <div class="help">Typisch: 50–80 g/h</div>
+            </div>
+            <div class="field">
+              <label>Natrium‑Ziel (mg/h) 🧂</label>
+              <input type="number" id="naPerHour_m" value="500" min="200" max="1500" step="25">
+              <div class="help">Typisch: 400–800 mg/h</div>
+            </div>
+            <div class="field">
+              <label>Flaschengröße (ml) 🍼</label>
+              <input type="number" id="bottleMl_m" value="800" min="500" max="1000" step="50">
+              <div class="help">Typisch: 750–850 ml</div>
+            </div>
+            <div class="field">
+              <label>Fruktose : Maltodextrin ⚗️</label>
+              <select id="ratio_m">
+                <option value="1:1">1:1</option>
+                <option value="1:2" selected>1:2</option>
+                <option value="1:3">1:3</option>
+              </select>
+              <div class="help">Standard: 1:2</div>
+            </div>
+            <div class="field">
+              <label class="pill"><input type="checkbox" id="waterSecond_m"> <span>2. Flasche = Wasser 🚰</span></label>
+              <div class="help">Standard: beide Flaschen mit gemischtem Drink.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><div class="k">Dauer</div><div class="v" id="kpiDuration_m">–</div><div class="s">Distanz ÷ Tempo</div></div>
+        <div class="kpi"><div class="k">Gesamt trinken</div><div class="v" id="kpiDrink_m">–</div><div class="s">über die ganze Tour</div></div>
+        <div class="kpi"><div class="k">Gesamt KH</div><div class="v" id="kpiCarbs_m">–</div><div class="s">Zielwert</div></div>
+        <div class="kpi"><div class="k">Gesamt Natrium</div><div class="v" id="kpiSodium_m">–</div><div class="s">Zielwert</div></div>
+        <div class="kpi"><div class="k">KH je Flasche</div><div class="v" id="kpiCarbBottle_m">–</div><div class="s" id="kpiCarbBottleSub_m">–</div></div>
+        <div class="kpi"><div class="k">Salz je Flasche</div><div class="v" id="kpiSaltBottle_m">–</div><div class="s" id="kpiSaltBottleSub_m">–</div></div>
+      </div>
+
+      <div class="card">
+        <h3>Sofortüberblick</h3>
+        <div class="badges">
+          <span class="badge" id="badgeSplit_m">–</span>
+          <span class="badge" id="badgeBottles_m">–</span>
+          <span class="badge" id="badgeRefill_m">–</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Kurze Zusammenfassung</h3>
+        <ul id="planSummaryList_m" class="small"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-food">
+    <h2>Verpflegung</h2>
+    <div class="cards">
+      <div class="card"><h3>Mischung pro Flasche 🧪</h3><ul id="recipeList" class="small"></ul></div>
+      <div class="card"><h3>Ziele pro Stunde 🎯</h3><ul id="targets" class="small"></ul></div>
+      <div class="card"><h3>Gesamtbedarf (Tour) 📊</h3><ul id="totals" class="small"></ul></div>
+      <div class="card"><h3>Mitnehmen & Transport 🎒</h3><ul id="carry" class="small"></ul></div>
+    </div>
+    <details open><summary>Snack‑Strategie pro Stunde 🍌</summary><ul id="snackStrategy" class="small"></ul></details>
+    <div style="margin-top:12px"><table><thead><tr><th style="width:6ch">Std</th><th>Trinken</th><th>Essen</th></tr></thead><tbody id="scheduleBody"></tbody></table></div>
+    <details><summary>Nachfüllstrategie 💧</summary><ul id="refillStrategy" class="small"></ul></details>
+  </section>
+
+  <section class="panel" id="tab-checklist">
+    <h2>Packliste</h2>
+    <details open><summary>Am Rad / Werkzeug 🔧</summary><div class="checkgrid" id="c_tools" style="margin-top:10px"></div></details>
+    <details open><summary>Verpflegung / Hydration 🍌</summary><div class="checkgrid" id="c_food" style="margin-top:10px"></div></details>
+    <details open><summary>Sicherheit / Licht 🔦</summary><div class="checkgrid" id="c_safety" style="margin-top:10px"></div></details>
+    <details open><summary>Navigation / Dokumente 🧭</summary><div class="checkgrid" id="c_nav" style="margin-top:10px"></div></details>
+    <details open><summary>Kleidung / Wetter 🧥</summary><div class="checkgrid" id="c_clothes" style="margin-top:10px"></div></details>
+    <details open><summary>Hygiene 🧻</summary><div class="checkgrid" id="c_hygiene" style="margin-top:10px"></div></details>
+    <details open><summary>Packlisten‑Logik</summary><ul id="packLogic" class="small"></ul></details>
+  </section>
+
+  <section class="panel" id="tab-summary">
+    <h2>Kurzansicht</h2>
+    <div class="kpis">
+      <div class="kpi"><div class="k">Distanz</div><div class="v" id="sumDistance">–</div><div class="s">km</div></div>
+      <div class="kpi"><div class="k">Dauer</div><div class="v" id="sumDuration">–</div><div class="s">Stunden</div></div>
+      <div class="kpi"><div class="k">Trinken / h</div><div class="v" id="sumDrinkPerH">–</div><div class="s">inkl. Drink/Wasser</div></div>
+      <div class="kpi"><div class="k">KH / h</div><div class="v" id="sumCarbPerH">–</div><div class="s">Ziel pro Stunde</div></div>
+    </div>
+    <div class="cards" style="margin-top:12px">
+      <div class="card"><h3>Auf einen Blick</h3><ul id="summaryList" class="small"></ul></div>
+      <div class="card"><h3>Screenshot / PDF geeignet</h3><ul class="small"><li>Diese Ansicht ist bewusst kompakt gehalten.</li><li>Ideal als kurze Vorabkontrolle vor der Tour.</li></ul></div>
+    </div>
+    <div class="footer">Autor: <b>Robert Plietzsch</b></div>
+  </section>
+</main>
+
+<div class="tabs">
+  <button class="tabbtn active" data-tab="tab-plan">Plan</button>
+  <button class="tabbtn" data-tab="tab-food">Verpflegung</button>
+  <button class="tabbtn" data-tab="tab-checklist">Packliste</button>
+  <button class="tabbtn" data-tab="tab-summary">Kurzansicht</button>
+</div>
+
+<script>
+const SODIUM_PER_GRAM_SALT = 393;
+const STATE_KEY = 'gravel_plan_state_v61';
+const THEME_KEY = 'gravel_plan_theme_v61';
+const toolData = {
+  tools:['Multitool (mit Kettennieter)','Minipumpe oder CO₂ + 2 Kartuschen + Adapter','2 Reifenheber','Flickzeug oder Tubeless‑Plugs','1–2 Ersatzschläuche (passendes Ventil)','Kettenschloss (Missing Link)','Fahrradschloss (leicht)','Kabelbinder + 1 m Gewebetape','Mini‑Kettenöl / Tuch','Speichenschlüssel (optional)'],
+  safety:['Frontlicht (geladen)','Rücklicht (geladen)','Reflektor‑Band / Clip','Erste‑Hilfe‑Set (Pflaster, Blasenpflaster, Kompresse)','Rettungsdecke'],
+  food:['Trinkflaschen','Pulver‑Portionen zum Nachfüllen der Trinkflaschen','Mini‑Sirup 30–50 ml','Reserve‑Riegel (~300 kcal)','Kleiner Müllbeutel','Wasserfilter'],
+  nav:['Handy + Offline‑Karten','Powerbank + Kabel','EC‑Karte / Bargeld','Ausweis + Krankenkassenkarte'],
+  clothes:['Regenjacke / Windweste','Armlinge / Beinlinge je nach Wetter','Radhandschuhe','Buff / Mütze','Sonnenbrille','Sonnencreme','Kettenschutz‑Wipe / Feuchttuch'],
+  hygiene:['Klopapier','Taschentücher']
+};
+const inputMap = {
+  distance:['distance','distance_m'],
+  speed:['speed','speed_m'],
+  hotMode:['hotMode','hotMode_m'],
+  mlPerHour:['mlPerHour','mlPerHour_m'],
+  carbPerHour:['carbPerHour','carbPerHour_m'],
+  naPerHour:['naPerHour','naPerHour_m'],
+  bottleMl:['bottleMl','bottleMl_m'],
+  ratio:['ratio','ratio_m'],
+  waterSecond:['waterSecond','waterSecond_m']
+};
+
+function isMobile(){ return window.matchMedia('(max-width: 640px)').matches; }
+function el(tag, cls, text){ const e=document.createElement(tag); if(cls) e.className=cls; if(text!==undefined) e.textContent=text; return e; }
+function switchTab(tabId){
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === tabId));
+  document.querySelectorAll('.tabbtn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+  localStorage.setItem('gravel_plan_v61_tab', tabId);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('.tabbtn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+
+function applyTheme(theme){
+  document.documentElement.classList.toggle('light', theme === 'light');
+  localStorage.setItem(THEME_KEY, theme);
+}
+function toggleTheme(){
+  applyTheme(document.documentElement.classList.contains('light') ? 'dark' : 'light');
+}
+function restoreTheme(){
+  const saved = localStorage.getItem(THEME_KEY);
+  if(saved) return applyTheme(saved);
+  applyTheme(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+}
+
+function setVal(key, value){
+  inputMap[key].forEach(id => {
+    const node = document.getElementById(id);
+    if(!node) return;
+    if(node.type === 'checkbox') node.checked = !!value;
+    else node.value = value;
+  });
+}
+function getVal(key){
+  const id = inputMap[key][isMobile() ? 1 : 0];
+  const node = document.getElementById(id);
+  if(!node) return '';
+  return node.type === 'checkbox' ? node.checked : node.value;
+}
+function syncInputs(changedId){
+  for(const [key, ids] of Object.entries(inputMap)){
+    if(ids.includes(changedId)){
+      const src = document.getElementById(changedId);
+      const value = src.type === 'checkbox' ? src.checked : src.value;
+      setVal(key, value);
+      return;
+    }
+  }
+}
+function ratioParts(){
+  const parts = String(getVal('ratio')).split(':').map(Number);
+  const sum = parts[0] + parts[1];
+  return {f:parts[0]/sum, m:parts[1]/sum, label:String(getVal('ratio'))};
+}
+function mirror(ids, value){
+  ids.forEach(id => {
+    const node = document.getElementById(id);
+    if(node) node.textContent = value;
+  });
+}
+
+function applySuggestions(){
+  const hot = !!getVal('hotMode');
+  setVal('mlPerHour', hot ? 800 : 650);
+  setVal('carbPerHour', hot ? 75 : 60);
+  setVal('naPerHour', hot ? 850 : 500);
+  setVal('bottleMl', 800);
+  setVal('ratio', '1:2');
+  compute();
+}
+function resetInputs(){
+  localStorage.removeItem(STATE_KEY);
+  setVal('distance', 130);
+  setVal('speed', 20);
+  setVal('hotMode', false);
+  setVal('mlPerHour', 650);
+  setVal('carbPerHour', 60);
+  setVal('naPerHour', 500);
+  setVal('bottleMl', 800);
+  setVal('ratio', '1:2');
+  setVal('waterSecond', false);
+  compute();
+}
+
+function buildSnackStrategy(hours, snickers, bananas, extCarb){
+  const items = ['Start bis Stunde 1: ruhig anlaufen, nur trinken.'];
+  if (bananas > 0) items.push('Ab Stunde 1: ½ Banane als sanfter Einstieg.');
+  items.push('Ab Stunde 1–2: kleine Portionen statt großer Snacks.');
+  items.push(snickers + '× Snickers gesamt einplanen, jeweils in 5 kleine Bissen teilen.');
+  items.push(extCarb + '× zusätzliche KH‑Portionen (Reiswaffel / Fruchtriegel / Datteln), vor allem in den längeren Mittelteil legen.');
+  items.push('Letztes Drittel: eher Drink und kleine, schnelle KH‑Portionen statt schwerem Essen.');
+  if(hours >= 6) items.push('Bei langen Touren spätestens alle 60–90 min bewusst etwas essen, auch ohne Hunger.');
+  return items;
+}
+function buildRefillStrategy(totalMl, bottleMl, waterSecond, duration){
+  const startVolume = bottleMl * 2;
+  const refillsNeeded = Math.max(0, Math.ceil((totalMl - startVolume) / bottleMl));
+  const items = ['Startkapazität mit 2 Flaschen: ' + startVolume + ' ml.'];
+  if(totalMl <= startVolume){
+    items.push('Für diese Tour ist voraussichtlich kein Nachfüllen nötig.');
+  } else {
+    items.push('Es werden voraussichtlich ' + refillsNeeded + ' zusätzliche Flaschenfüllungen benötigt.');
+    items.push(waterSecond ? 'Mit 1× Drink + 1× Wasser starten und unterwegs Wasser nachfüllen.' : 'Mit 2× gemischtem Drink starten.');
+  }
+  if(duration >= 6) items.push('Bei langer Tour Stopps oder verlässliche Wasserquelle vorab planen.');
+  return items;
+}
+function buildPackLogic(duration, hotMode, totalMl, refillsNeeded){
+  const items = [duration >= 6 ? 'Pflicht: Energie und Hydration bewusst vorplanen.' : 'Pflicht: Basis-Tools, Licht und Trinksystem prüfen.'];
+  items.push(hotMode ? 'Empfohlen: höhere Trink- und Natriumreserve einpacken.' : 'Empfohlen: Standard-Hydration genügt meist.');
+  items.push(refillsNeeded > 0 ? 'Empfohlen: Nachfüllpunkt oder Wasserfilter einplanen.' : 'Optional: Wasserfilter nur als zusätzliche Reserve.');
+  items.push(totalMl > 4000 ? 'Empfohlen: Snacks und Pulver klar in Portionen vorbereiten.' : 'Optional: kleine Snack-Auswahl reicht meist aus.');
+  return items;
+}
+
+function compute(){
+  const distance = parseFloat(getVal('distance') || 0);
+  const speed = parseFloat(getVal('speed') || 0);
+  const hotMode = !!getVal('hotMode');
+  const mlPerHour = parseFloat(getVal('mlPerHour') || 0);
+  const carbPerHour = parseFloat(getVal('carbPerHour') || 0);
+  const naPerHour = parseFloat(getVal('naPerHour') || 0);
+  const bottleMl = parseFloat(getVal('bottleMl') || 0);
+  const waterSecond = !!getVal('waterSecond');
+  const ratio = ratioParts();
+
+  const duration = (distance > 0 && speed > 0) ? (distance / speed) : 0;
+  const drinkShare = waterSecond ? 0.5 : 1.0;
+  const drinkMlPerH = Math.round(mlPerHour * drinkShare);
+  const waterMlPerH = Math.max(0, Math.round(mlPerHour - drinkMlPerH));
+  const drinkBottlesPerHour = bottleMl > 0 ? (drinkMlPerH / bottleMl) : 0;
+  const carbPerBottle = drinkBottlesPerHour > 0 ? (carbPerHour / drinkBottlesPerHour) : 0;
+  const mgNaPerBottle = drinkBottlesPerHour > 0 ? (naPerHour / drinkBottlesPerHour) : 0;
+  const saltPerBottle = mgNaPerBottle / 393;
+  const totalMl = Math.round(mlPerHour * duration);
+  const totalDrinkMl = Math.round(drinkMlPerH * duration);
+  const totalWaterMl = Math.max(0, totalMl - totalDrinkMl);
+  const totalBottles = bottleMl > 0 ? Math.ceil(totalMl / bottleMl) : 0;
+  const totalCarbDrink = Math.round(carbPerHour * duration);
+  const totalNa = Math.round(naPerHour * duration);
+  const refillsNeeded = Math.max(0, Math.ceil((totalMl - bottleMl * 2) / bottleMl));
+
+  mirror(['kpiDuration','kpiDuration_m'], (Math.round(duration*4)/4).toFixed(2) + ' h');
+  mirror(['kpiDrink','kpiDrink_m'], totalMl + ' ml');
+  mirror(['kpiCarbs','kpiCarbs_m'], totalCarbDrink + ' g');
+  mirror(['kpiSodium','kpiSodium_m'], totalNa + ' mg');
+  mirror(['kpiCarbBottle','kpiCarbBottle_m'], Math.round(carbPerBottle) + ' g');
+  mirror(['kpiCarbBottleSub','kpiCarbBottleSub_m'], Math.round(carbPerBottle*ratio.f) + ' g Fruktose + ' + Math.round(carbPerBottle*ratio.m) + ' g Malto');
+  mirror(['kpiSaltBottle','kpiSaltBottle_m'], (Math.round(saltPerBottle*10)/10).toFixed(1) + ' g');
+  mirror(['kpiSaltBottleSub','kpiSaltBottleSub_m'], '≈ ' + Math.round(mgNaPerBottle) + ' mg Na pro Flasche');
+  mirror(['badgeSplit','badgeSplit_m'], 'Drink ' + drinkMlPerH + ' ml/h · Wasser ' + waterMlPerH + ' ml/h');
+  mirror(['badgeBottles','badgeBottles_m'], 'ca. ' + totalBottles + ' Flaschen gesamt');
+  mirror(['badgeRefill','badgeRefill_m'], refillsNeeded > 0 ? ('Refills nötig: ' + refillsNeeded) : 'Kein Refill nötig');
+
+  document.getElementById('recipeList').innerHTML = [
+    Math.round(carbPerBottle*ratio.m) + ' g Maltodextrin',
+    Math.round(carbPerBottle*ratio.f) + ' g Fruktose',
+    saltPerBottle.toFixed(1) + ' g Salz <span class="muted">(~' + Math.round(mgNaPerBottle) + ' mg Natrium)</span>',
+    'Mit Wasser bis ' + bottleMl + ' ml auffüllen (Sirup optional)'
+  ].map(x => '<li>'+x+'</li>').join('');
+
+  document.getElementById('targets').innerHTML = [
+    '<b>Trinken:</b> ' + mlPerHour + ' ml/h <span class="muted">(Drink ~' + drinkMlPerH + ' · Wasser ~' + waterMlPerH + ')</span>',
+    '<b>KH:</b> ' + carbPerHour + ' g/h · <b>Na:</b> ' + naPerHour + ' mg/h',
+    waterSecond ? '2. Flasche: Wasser' : '2. Flasche: ebenfalls Drink'
+  ].map(x => '<li>'+x+'</li>').join('');
+
+  document.getElementById('totals').innerHTML = [
+    '<b>Dauer:</b> ' + (Math.round(duration*4)/4).toFixed(2) + ' h',
+    '<b>Gesamttrinkmenge:</b> ' + totalMl + ' ml (Drink ' + totalDrinkMl + ' / Wasser ' + totalWaterMl + ')',
+    '<b>Flaschen gesamt:</b> ' + totalBottles + ' × ' + bottleMl + ' ml',
+    '<b>KH über Drink (Ziel):</b> ~' + totalCarbDrink + ' g',
+    '<b>Natrium gesamt (Ziel):</b> ~' + totalNa + ' mg'
+  ].map(x => '<li>'+x+'</li>').join('');
+
+  const snickers = Math.max(1, Math.ceil(duration * 0.33));
+  const bananas = 1;
+  const extCarb = Math.max(1, Math.round(duration * 0.3));
+
+  document.getElementById('carry').innerHTML = [
+    'Am Rad: Trinkflaschen (' + (waterSecond ? '1× Drink, 1× Wasser' : '2× Drink') + ')',
+    'Pulver‑Portionen zum Nachfüllen der Trinkflaschen',
+    snickers + '× Snickers (geteilt essen)',
+    bananas + '× Banane',
+    extCarb + '× externe KH‑Portion (Reiswaffel / Fruchtriegel / Datteln)',
+    'Mini‑Sirup (30–50 ml)',
+    'Kleiner Müllbeutel'
+  ].map(x => '<li>'+x+'</li>').join('');
+
+  document.getElementById('snackStrategy').innerHTML = buildSnackStrategy(Math.max(1, Math.ceil(duration)), snickers, bananas, extCarb).map(x => '<li>'+x+'</li>').join('');
+  document.getElementById('refillStrategy').innerHTML = buildRefillStrategy(totalMl, bottleMl, waterSecond, duration).map(x => '<li>'+x+'</li>').join('');
+  document.getElementById('packLogic').innerHTML = buildPackLogic(duration, hotMode, totalMl, refillsNeeded).map(x => '<li>'+x+'</li>').join('');
+
+  const tbody = document.getElementById('scheduleBody');
+  tbody.innerHTML = '';
+  const hours = Math.max(1, Math.ceil(duration));
+  let snLeft = snickers * 5, extLeft = extCarb, bananaLeft = bananas * 2;
+  for(let h=0; h<hours; h++){
+    const tr = el('tr');
+    tr.appendChild(el('td','', h+'–'+(h+1)));
+    const tdDrink = el('td');
+    tdDrink.textContent = mlPerHour + ' ml (Drink ~' + drinkMlPerH + ' · Wasser ~' + waterMlPerH + ')';
+    tr.appendChild(tdDrink);
+    const eat = [];
+    if(h===0) eat.push('nichts essen / sachte einrollen');
+    if(h===1 && bananaLeft>0){ eat.push('½ Banane'); bananaLeft--; }
+    if(h>=1){
+      if(snLeft>0){ eat.push('~1/5 Snickers'); snLeft--; }
+      if(extLeft>0 && (h%2===1)){ eat.push('Kleine KH‑Portion (Reiswaffel/Fruchtriegel/Datteln)'); extLeft--; }
+      if(h >= Math.ceil(hours*0.66)) eat.push('eher schnelle KH und Drink bevorzugen');
+    }
+    const tdEat = el('td');
+    tdEat.innerHTML = eat.length ? '<ul class="small">'+eat.map(x => '<li>'+x+'</li>').join('')+'</ul>' : '<span class="muted">optional</span>';
+    tr.appendChild(tdEat);
+    tbody.appendChild(tr);
+  }
+
+  document.getElementById('sumDistance').textContent = distance + ' km';
+  document.getElementById('sumDuration').textContent = (Math.round(duration*4)/4).toFixed(2) + ' h';
+  document.getElementById('sumDrinkPerH').textContent = mlPerHour + ' ml';
+  document.getElementById('sumCarbPerH').textContent = carbPerHour + ' g';
+
+  const summary = [
+    'Flaschenmix: ' + (waterSecond ? '1× Drink + 1× Wasser' : '2× gemischter Drink'),
+    'Drink je Stunde: ca. ' + drinkMlPerH + ' ml',
+    'Wasser je Stunde: ca. ' + waterMlPerH + ' ml',
+    'Refills: ' + (refillsNeeded > 0 ? refillsNeeded + ' einplanen' : 'nicht nötig'),
+    'Snacks: ' + snickers + '× Snickers, ' + bananas + '× Banane, ' + extCarb + '× weitere KH-Portion'
+  ];
+  document.getElementById('summaryList').innerHTML = summary.map(x => '<li>'+x+'</li>').join('');
+  document.getElementById('planSummaryList').innerHTML = summary.map(x => '<li>'+x+'</li>').join('');
+  document.getElementById('planSummaryList_m').innerHTML = summary.map(x => '<li>'+x+'</li>').join('');
+
+  localStorage.setItem(STATE_KEY, JSON.stringify({
+    distance, speed, hotMode, mlPerHour, carbPerHour, naPerHour, bottleMl, ratio: ratio.label, waterSecond
+  }));
+}
+
+function restoreFormState(){
+  const raw = localStorage.getItem(STATE_KEY) || localStorage.getItem('gravel_plan_state_v6');
+  if(!raw) return;
+  try{
+    const obj = JSON.parse(raw);
+    Object.entries(obj).forEach(([k,v]) => { if(inputMap[k]) setVal(k,v); });
+  }catch(e){}
+}
+function buildChecklist(){
+  const buckets = [['c_tools','tools'],['c_safety','safety'],['c_food','food'],['c_nav','nav'],['c_clothes','clothes'],['c_hygiene','hygiene']];
+  for(const [id,key] of buckets){
+    const host = document.getElementById(id);
+    host.innerHTML = '';
+    toolData[key].forEach((label,idx) => {
+      const keyId = id + '_' + idx;
+      const wrap = el('div','checkitem');
+      const cb = el('input');
+      cb.type = 'checkbox';
+      cb.id = keyId;
+      if(localStorage.getItem(keyId) === '1') cb.checked = true;
+      cb.addEventListener('change', ()=> localStorage.setItem(keyId, cb.checked ? '1' : '0'));
+      const lab = el('label','',label);
+      lab.setAttribute('for', keyId);
+      wrap.append(cb, lab);
+      host.append(wrap);
+    });
+  }
+}
+async function exportPdf(){
+  if(!window.html2pdf){
+    try{
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js';
+      document.body.appendChild(s);
+      await new Promise((res,rej)=>{ s.onload=res; s.onerror=rej; });
+    }catch(err){
+      alert('PDF‑Bibliothek konnte nicht geladen werden.');
+      window.print();
+      return;
+    }
+  }
+  compute();
+  await html2pdf().set({
+    margin:[8,8,8,8],
+    filename:'Gravel-Plan_v61.pdf',
+    image:{type:'jpeg',quality:0.95},
+    html2canvas:{scale:2,useCORS:true,background:'#ffffff'},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  }).from(document.getElementById('exportArea')).save();
+}
+
+function bindInput(id){
+  const node = document.getElementById(id);
+  if(!node) return;
+  const eventName = (node.tagName === 'SELECT' || node.type === 'checkbox') ? 'change' : 'input';
+  node.addEventListener(eventName, ()=>{ syncInputs(id); compute(); });
+}
+[
+  'distance','speed','hotMode','mlPerHour','carbPerHour','naPerHour','bottleMl','ratio','waterSecond',
+  'distance_m','speed_m','hotMode_m','mlPerHour_m','carbPerHour_m','naPerHour_m','bottleMl_m','ratio_m','waterSecond_m'
+].forEach(bindInput);
+
+document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+document.getElementById('calcBtn').addEventListener('click', compute);
+document.getElementById('calcBtn_m').addEventListener('click', compute);
+document.getElementById('suggestBtn').addEventListener('click', applySuggestions);
+document.getElementById('suggestBtn_m').addEventListener('click', applySuggestions);
+document.getElementById('resetBtn').addEventListener('click', resetInputs);
+document.getElementById('resetBtn_m').addEventListener('click', resetInputs);
+document.getElementById('exportPdf').addEventListener('click', exportPdf);
+document.getElementById('printBtn').addEventListener('click', ()=>{ compute(); window.print(); });
+
+function preset(dist){ setVal('distance', dist); compute(); }
+document.getElementById('preset100').addEventListener('click', ()=>preset(100));
+document.getElementById('preset130').addEventListener('click', ()=>preset(130));
+document.getElementById('preset170').addEventListener('click', ()=>preset(170));
+document.getElementById('preset200').addEventListener('click', ()=>preset(200));
+
+restoreTheme();
+restoreFormState();
+buildChecklist();
+const savedTab = localStorage.getItem('gravel_plan_v61_tab');
+if(savedTab && document.getElementById(savedTab)) switchTab(savedTab);
+if(!localStorage.getItem(STATE_KEY)) setVal('waterSecond', false);
+compute();
+window.addEventListener('resize', compute);
+if('serviceWorker' in navigator){ window.addEventListener('load', ()=>navigator.serviceWorker.register('./sw.js')); }
+</script>
+</body>
+</html>
