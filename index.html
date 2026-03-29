@@ -44,6 +44,7 @@ body{
 .btn.primary{background:linear-gradient(180deg,var(--accent),#1b944f);color:#08210f;border-color:#177d43}
 .btn.ghost{background:transparent;box-shadow:none}
 .btn.small{padding:10px 12px;min-height:42px;font-size:14px}
+.btn.preset-active{background:linear-gradient(180deg,var(--accent),#1b944f);color:#08210f;border-color:#177d43}
 .btn-help{display:block;font-weight:500;margin-top:4px;line-height:1.25}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(11,15,20,.95);backdrop-filter:blur(12px);border-top:1px solid var(--border);padding-bottom:var(--safe-bottom)}
 :root.light .tabs{background:rgba(245,247,251,.96)}
@@ -113,7 +114,7 @@ details>summary{cursor:pointer;font-weight:700}
     <img class="appicon" src="icon-192.png" alt="Gravel Icon">
     <div class="title">
       <h1>Gravel‑Tour – Ernährungs‑ & Trinkplan</h1>
-      <div class="subtitle">Version 6.1 · Cleanup ohne Inhaltsänderung</div>
+      <div class="subtitle">Version 6.2 · Gel-Konzentrat & Preset-Markierung</div>
     </div>
   </div>
   <div class="toolbar">
@@ -323,7 +324,8 @@ details>summary{cursor:pointer;font-weight:700}
   <section class="panel" id="tab-food">
     <h2>Verpflegung</h2>
     <div class="cards">
-      <div class="card"><h3>Mischung pro Flasche 🧪</h3><ul id="recipeList" class="small"></ul></div>
+      <div class="card"><h3>Gel-Konzentrat gesamt 🧴</h3><ul id="gelMixList" class="small"></ul></div>
+      <div class="card"><h3>Dosierung pro Trinkflasche 🧪</h3><ul id="recipeList" class="small"></ul></div>
       <div class="card"><h3>Ziele pro Stunde 🎯</h3><ul id="targets" class="small"></ul></div>
       <div class="card"><h3>Gesamtbedarf (Tour) 📊</h3><ul id="totals" class="small"></ul></div>
       <div class="card"><h3>Mitnehmen & Transport 🎒</h3><ul id="carry" class="small"></ul></div>
@@ -374,7 +376,7 @@ const THEME_KEY = 'gravel_plan_theme_v61';
 const toolData = {
   tools:['Multitool (mit Kettennieter)','Minipumpe oder CO₂ + 2 Kartuschen + Adapter','2 Reifenheber','Flickzeug oder Tubeless‑Plugs','1–2 Ersatzschläuche (passendes Ventil)','Kettenschloss (Missing Link)','Fahrradschloss (leicht)','Kabelbinder + 1 m Gewebetape','Mini‑Kettenöl / Tuch','Speichenschlüssel (optional)'],
   safety:['Frontlicht (geladen)','Rücklicht (geladen)','Reflektor‑Band / Clip','Erste‑Hilfe‑Set (Pflaster, Blasenpflaster, Kompresse)','Rettungsdecke'],
-  food:['Trinkflaschen','Pulver‑Portionen zum Nachfüllen der Trinkflaschen','Mini‑Sirup 30–50 ml','Reserve‑Riegel (~300 kcal)','Kleiner Müllbeutel','Wasserfilter'],
+  food:['Trinkflaschen','Gel-/Konzentratflasche zum Dosieren','Aroma / Sirup für das Gel','Reserve‑Riegel (~300 kcal)','Kleiner Müllbeutel','Wasserfilter'],
   nav:['Handy + Offline‑Karten','Powerbank + Kabel','EC‑Karte / Bargeld','Ausweis + Krankenkassenkarte'],
   clothes:['Regenjacke / Windweste','Armlinge / Beinlinge je nach Wetter','Radhandschuhe','Buff / Mütze','Sonnenbrille','Sonnencreme','Kettenschutz‑Wipe / Feuchttuch'],
   hygiene:['Klopapier','Taschentücher']
@@ -447,6 +449,14 @@ function mirror(ids, value){
   ids.forEach(id => {
     const node = document.getElementById(id);
     if(node) node.textContent = value;
+  });
+}
+function updatePresetButtons(){
+  const distance = Number(getVal('distance'));
+  const presets = {preset100:100,preset130:130,preset170:170,preset200:200};
+  Object.entries(presets).forEach(([id,val]) => {
+    const btn = document.getElementById(id);
+    if(btn) btn.classList.toggle('preset-active', distance === val);
   });
 }
 
@@ -543,11 +553,28 @@ function compute(){
   mirror(['badgeBottles','badgeBottles_m'], 'ca. ' + totalBottles + ' Flaschen gesamt');
   mirror(['badgeRefill','badgeRefill_m'], refillsNeeded > 0 ? ('Refills nötig: ' + refillsNeeded) : 'Kein Refill nötig');
 
+  const mixedDrinkBottles = bottleMl > 0 ? (totalDrinkMl / bottleMl) : 0;
+  const totalMalto = Math.round(totalCarbDrink * ratio.m);
+  const totalFructose = Math.round(totalCarbDrink * ratio.f);
+  const totalSalt = totalNa / SODIUM_PER_GRAM_SALT;
+  const concentrateDosePerBottleMl = mixedDrinkBottles > 0 ? Math.round(totalDrinkMl / mixedDrinkBottles * 0.15) : 0;
+
+  document.getElementById('gelMixList').innerHTML = [
+    totalMalto + ' g Maltodextrin',
+    totalFructose + ' g Fruktose',
+    totalSalt.toFixed(1) + ' g Salz <span class="muted">(~' + totalNa + ' mg Natrium)</span>',
+    'Aroma / Sirup nach Geschmack',
+    'Mit wenig Wasser zu einem gut dosierbaren Gel-Konzentrat anrühren und in 1 Dosierflasche füllen',
+    'Für die Tour reichen damit ca. ' + Math.max(1, Math.ceil(mixedDrinkBottles)) + ' gemischte Trinkflaschen'
+  ].map(x => '<li>'+x+'</li>').join('');
+
   document.getElementById('recipeList').innerHTML = [
     Math.round(carbPerBottle*ratio.m) + ' g Maltodextrin',
     Math.round(carbPerBottle*ratio.f) + ' g Fruktose',
     saltPerBottle.toFixed(1) + ' g Salz <span class="muted">(~' + Math.round(mgNaPerBottle) + ' mg Natrium)</span>',
-    'Mit Wasser bis ' + bottleMl + ' ml auffüllen (Sirup optional)'
+    'Pro gemischter Flasche anteilig aus dem Gel-Konzentrat dosieren',
+    'Dann mit Wasser bis ' + bottleMl + ' ml auffüllen',
+    waterSecond ? '2. Flasche bleibt Wasser' : '2. Flasche ebenfalls als gemischter Drink ansetzen'
   ].map(x => '<li>'+x+'</li>').join('');
 
   document.getElementById('targets').innerHTML = [
@@ -570,11 +597,11 @@ function compute(){
 
   document.getElementById('carry').innerHTML = [
     'Am Rad: Trinkflaschen (' + (waterSecond ? '1× Drink, 1× Wasser' : '2× Drink') + ')',
-    'Pulver‑Portionen zum Nachfüllen der Trinkflaschen',
+    '1 Gel-/Konzentratflasche mit der Gesamtmischung',
     snickers + '× Snickers (geteilt essen)',
     bananas + '× Banane',
     extCarb + '× externe KH‑Portion (Reiswaffel / Fruchtriegel / Datteln)',
-    'Mini‑Sirup (30–50 ml)',
+    'Aroma / Sirup für das Gel',
     'Kleiner Müllbeutel'
   ].map(x => '<li>'+x+'</li>').join('');
 
@@ -613,6 +640,7 @@ function compute(){
 
   const summary = [
     'Flaschenmix: ' + (waterSecond ? '1× Drink + 1× Wasser' : '2× gemischter Drink'),
+    'Gel-Konzentrat gesamt: ' + totalCarbDrink + ' g KH und ' + totalSalt.toFixed(1) + ' g Salz',
     'Drink je Stunde: ca. ' + drinkMlPerH + ' ml',
     'Wasser je Stunde: ca. ' + waterMlPerH + ' ml',
     'Refills: ' + (refillsNeeded > 0 ? refillsNeeded + ' einplanen' : 'nicht nötig'),
@@ -621,6 +649,8 @@ function compute(){
   document.getElementById('summaryList').innerHTML = summary.map(x => '<li>'+x+'</li>').join('');
   document.getElementById('planSummaryList').innerHTML = summary.map(x => '<li>'+x+'</li>').join('');
   document.getElementById('planSummaryList_m').innerHTML = summary.map(x => '<li>'+x+'</li>').join('');
+
+  updatePresetButtons();
 
   localStorage.setItem(STATE_KEY, JSON.stringify({
     distance, speed, hotMode, mlPerHour, carbPerHour, naPerHour, bottleMl, ratio: ratio.label, waterSecond
@@ -707,6 +737,7 @@ document.getElementById('preset200').addEventListener('click', ()=>preset(200));
 
 restoreTheme();
 restoreFormState();
+updatePresetButtons();
 buildChecklist();
 const savedTab = localStorage.getItem('gravel_plan_v61_tab');
 if(savedTab && document.getElementById(savedTab)) switchTab(savedTab);
