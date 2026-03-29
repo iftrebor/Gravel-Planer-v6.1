@@ -196,7 +196,7 @@ details>summary{cursor:pointer;font-weight:700}
         </div>
 
         <div class="toolbar">
-          <button class="btn" id="suggestBtn">✨ Empfehlungen übernehmen<span class="btn-help">normal: 650 ml/h · 60 g/h · 500 mg/h · Flasche 800 ml · Verhältnis 1:2<br>Hitze: 800 ml/h · 75 g/h · 850 mg/h</span></button>
+          <button class="btn" id="suggestBtn">✨ Empfehlungen übernehmen<span class="btn-help">normal: 650 ml/h · 60 g/h · 500 mg/h · Flasche 800 ml · Verhältnis 1:2<br>Hitze: 800 ml/h · 60 g/h · 850 mg/h</span></button>
           <button class="btn ghost" id="resetBtn">↺ Zurücksetzen</button>
           <button class="btn primary" id="calcBtn">🧮 Plan berechnen</button>
         </div>
@@ -230,7 +230,7 @@ details>summary{cursor:pointer;font-weight:700}
 
     <div class="plan-mobile">
       <div class="toolbar">
-        <button class="btn" id="suggestBtn_m">✨ Empfehlungen übernehmen<span class="btn-help">normal: 650 ml/h · 60 g/h · 500 mg/h · Flasche 800 ml · Verhältnis 1:2<br>Hitze: 800 ml/h · 75 g/h · 850 mg/h</span></button>
+        <button class="btn" id="suggestBtn_m">✨ Empfehlungen übernehmen<span class="btn-help">normal: 650 ml/h · 60 g/h · 500 mg/h · Flasche 800 ml · Verhältnis 1:2<br>Hitze: 800 ml/h · 60 g/h · 850 mg/h</span></button>
         <button class="btn ghost" id="resetBtn_m">↺ Zurücksetzen</button>
         <button class="btn primary" id="calcBtn_m">🧮 Plan berechnen</button>
       </div>
@@ -463,10 +463,16 @@ function updatePresetButtons(){
 function applySuggestions(){
   const hot = !!getVal('hotMode');
   setVal('mlPerHour', hot ? 800 : 650);
-  setVal('carbPerHour', hot ? 75 : 60);
+  setVal('carbPerHour', 60);
   setVal('naPerHour', hot ? 850 : 500);
   setVal('bottleMl', 800);
   setVal('ratio', '1:2');
+  compute();
+}
+function applyHotModeDefaults(isHot){
+  setVal('mlPerHour', isHot ? 800 : 650);
+  setVal('carbPerHour', 60);
+  setVal('naPerHour', isHot ? 850 : 500);
   compute();
 }
 function resetInputs(){
@@ -510,7 +516,7 @@ function buildPackLogic(duration, hotMode, totalMl, refillsNeeded){
   const items = [duration >= 6 ? 'Pflicht: Energie und Hydration bewusst vorplanen.' : 'Pflicht: Basis-Tools, Licht und Trinksystem prüfen.'];
   items.push(hotMode ? 'Empfohlen: höhere Trink- und Natriumreserve einpacken.' : 'Empfohlen: Standard-Hydration genügt meist.');
   items.push(refillsNeeded > 0 ? 'Empfohlen: Nachfüllpunkt oder Wasserfilter einplanen.' : 'Optional: Wasserfilter nur als zusätzliche Reserve.');
-  items.push(totalMl > 4000 ? 'Empfohlen: Snacks und Pulver klar in Portionen vorbereiten.' : 'Optional: kleine Snack-Auswahl reicht meist aus.');
+  items.push(totalMl > 4000 ? 'Empfohlen: Snacks und Gel-Konzentrat klar vorbereiten.' : 'Optional: kleine Snack-Auswahl reicht meist aus.');
   return items;
 }
 
@@ -518,9 +524,12 @@ function compute(){
   const distance = parseFloat(getVal('distance') || 0);
   const speed = parseFloat(getVal('speed') || 0);
   const hotMode = !!getVal('hotMode');
-  const mlPerHour = parseFloat(getVal('mlPerHour') || 0);
-  const carbPerHour = parseFloat(getVal('carbPerHour') || 0);
-  const naPerHour = parseFloat(getVal('naPerHour') || 0);
+  const baseMlPerHour = parseFloat(getVal('mlPerHour') || 0);
+  const baseCarbPerHour = parseFloat(getVal('carbPerHour') || 0);
+  const baseNaPerHour = parseFloat(getVal('naPerHour') || 0);
+  const mlPerHour = hotMode ? Math.max(baseMlPerHour, 800) : baseMlPerHour;
+  const carbPerHour = baseCarbPerHour;
+  const naPerHour = hotMode ? Math.max(baseNaPerHour, 850) : baseNaPerHour;
   const bottleMl = parseFloat(getVal('bottleMl') || 0);
   const waterSecond = !!getVal('waterSecond');
   const ratio = ratioParts();
@@ -580,6 +589,7 @@ function compute(){
   document.getElementById('targets').innerHTML = [
     '<b>Trinken:</b> ' + mlPerHour + ' ml/h <span class="muted">(Drink ~' + drinkMlPerH + ' · Wasser ~' + waterMlPerH + ')</span>',
     '<b>KH:</b> ' + carbPerHour + ' g/h · <b>Na:</b> ' + naPerHour + ' mg/h',
+    hotMode ? 'Hitze-Modus aktiv: Berechnung mindestens mit 800 ml/h und 850 mg/h – KH bleiben unverändert' : 'Hitze-Modus aus: Berechnung folgt exakt deinen Eingabewerten',
     waterSecond ? '2. Flasche: Wasser' : '2. Flasche: ebenfalls Drink'
   ].map(x => '<li>'+x+'</li>').join('');
 
@@ -644,7 +654,8 @@ function compute(){
     'Drink je Stunde: ca. ' + drinkMlPerH + ' ml',
     'Wasser je Stunde: ca. ' + waterMlPerH + ' ml',
     'Refills: ' + (refillsNeeded > 0 ? refillsNeeded + ' einplanen' : 'nicht nötig'),
-    'Snacks: ' + snickers + '× Snickers, ' + bananas + '× Banane, ' + extCarb + '× weitere KH-Portion'
+    'Snacks: ' + snickers + '× Snickers, ' + bananas + '× Banane, ' + extCarb + '× weitere KH-Portion',
+    hotMode ? 'Hitze-Modus aktiv: mehr Wasser und Natrium berücksichtigt, KH bleiben konstant' : 'Hitze-Modus aus' 
   ];
   document.getElementById('summaryList').innerHTML = summary.map(x => '<li>'+x+'</li>').join('');
   document.getElementById('planSummaryList').innerHTML = summary.map(x => '<li>'+x+'</li>').join('');
@@ -712,7 +723,14 @@ function bindInput(id){
   const node = document.getElementById(id);
   if(!node) return;
   const eventName = (node.tagName === 'SELECT' || node.type === 'checkbox') ? 'change' : 'input';
-  node.addEventListener(eventName, ()=>{ syncInputs(id); compute(); });
+  node.addEventListener(eventName, ()=>{
+    syncInputs(id);
+    if(id === 'hotMode' || id === 'hotMode_m'){
+      applyHotModeDefaults(!!getVal('hotMode'));
+      return;
+    }
+    compute();
+  });
 }
 [
   'distance','speed','hotMode','mlPerHour','carbPerHour','naPerHour','bottleMl','ratio','waterSecond',
